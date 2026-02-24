@@ -1,0 +1,570 @@
+:root {
+    --font-family: 'Inter', sans-serif;
+    --bg-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --glass-bg: rgba(255, 255, 255, 0.2);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-blur: 10px;
+    --text-color: #333;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-attachment: fixed;
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#app {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    /* Mude para min-height */
+    display: block;
+    overflow-x: hidden;
+    /* Evita que a página dance para os lados */
+}
+
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    max-width: 400px;
+    margin: auto;
+    /* Centers the login box when it's the only child */
+}
+
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Sidebar */
+#sidebar {
+    position: fixed;
+    /* Isso faz ela flutuar igual no celular */
+    left: -300px;
+    /* Isso joga ela para fora da tela */
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    transition: left 0.3s ease;
+}
+
+/* Adicione esta regra logo abaixo do #sidebar */
+#sidebar.mobile-open {
+    left: 0;
+    /* Quando clicar no botão, ela volta para a tela */
+}
+
+.sidebar-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.entries-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.entry-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.entry-item:hover,
+.entry-item.active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.entry-date {
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.entry-snippet {
+    font-size: 0.8em;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Main Content */
+#main-content {
+    flex: 1;
+    width: 100%;
+    /* Agora ele ocupa 100% da largura no PC também */
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editor-toolbar {
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 10px;
+}
+
+.btn-tool {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.2s;
+}
+
+.btn-tool:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+:root {
+    --notebook-bg: #4A3666;
+    /* Specific Dark Purple requested by user */
+    --notebook-line: rgba(255, 255, 255, 0.1);
+    /* Light lines on dark background */
+    --notebook-margin: #ff85b3;
+    /* Lighter pink for margin */
+    --notebook-text: #ffffff;
+    /* White text for contrast */
+}
+
+.dark-theme {
+    --notebook-bg: #1a1b1e;
+    /* Dark Notebook */
+    --notebook-line: rgba(255, 255, 255, 0.08);
+    --notebook-margin: #4a2b2b;
+    --notebook-text: #e2e8f0;
+
+    /* Global Overrides */
+    --glass-bg: rgba(0, 0, 0, 0.6);
+    --bg-image: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
+}
+
+.dark-theme .form-control {
+    color: white !important;
+}
+
+.dark-theme .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.dark-theme .date-display {
+    color: white !important;
+}
+
+.dark-theme .editor-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.editor-content {
+    flex: 1;
+    min-height: 100vh;
+    padding: 32px 30px 30px 70px;
+    overflow-y: auto;
+    outline: none;
+    font-size: 18px;
+    line-height: 32px;
+    color: var(--notebook-text);
+
+    /* 90s Notebook Paper Effect */
+    background-color: var(--notebook-bg);
+    background-image:
+        /* Vertical Margin Line */
+        linear-gradient(90deg, transparent 64px, var(--notebook-margin) 64px, var(--notebook-margin) 66px, transparent 66px),
+        /* Horizontal Lines */
+        linear-gradient(var(--notebook-line) 1px, transparent 1px);
+    background-size: 100% 32px;
+    background-attachment: local;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Force Sidebar to remain "Light/Glass" even in Dark Mode */
+.dark-theme #sidebar {
+    background: rgba(255, 255, 255, 0.25);
+    color: #2d3748;
+    /* Dark text for light sidebar */
+}
+
+.dark-theme #sidebar .sidebar-item {
+    color: #2d3748;
+}
+
+.dark-theme #sidebar .sidebar-logo {
+    color: #2d3748;
+}
+
+.editor-content.empty:before {
+    content: attr(data-placeholder);
+    color: var(--notebook-text);
+    opacity: 0.4;
+    pointer-events: none;
+    display: block;
+}
+
+/* Mobile Fixes for Notebook Alignment */
+@media (max-width: 600px) {
+    .editor-content {
+        padding: 34px 15px 20px 55px !important;
+        /* Force padding to SIT on the line */
+        font-size: 16px;
+        line-height: 28px;
+        background-size: 100% 28px;
+        background-image:
+            /* Vertical red line at 45px */
+            linear-gradient(90deg, transparent 45px, var(--notebook-margin) 45px, var(--notebook-margin) 47px, transparent 47px),
+            /* Horizontal lines repeating every 28px */
+            linear-gradient(var(--notebook-line) 1px, transparent 1px);
+    }
+
+    .editor-content.empty:before {
+        display: inline-block;
+        /* Helps with alignment in some browsers */
+        width: auto;
+        padding-left: 0;
+    }
+}
+
+.editor-content:focus:before {
+    display: none !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: opacity 0.2s;
+}
+
+.btn-danger {
+    background: #ff4b4b;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+    body {
+        padding: 0;
+        align-items: flex-start;
+    }
+
+    #app {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+        gap: 0;
+    }
+
+    #sidebar {
+        position: fixed;
+        left: -300px;
+        top: 0;
+        bottom: 0;
+        z-index: 2000;
+        width: 280px;
+        transition: left 0.3s ease;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    #sidebar.mobile-open {
+        left: 0;
+    }
+
+    #main-content {
+        width: 100%;
+    }
+
+    .editor-content {
+        padding: 20px;
+    }
+
+    .btn-mobile-menu {
+        display: block !important;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 5px 12px;
+        margin-right: 10px;
+        z-index: 1001;
+    }
+}
+
+/* Forms */
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.9);
+    /* Solid-ish light background for readability */
+    color: #111;
+    /* Explicit dark text */
+    font-size: 1rem;
+    transition: all 0.2s;
+    outline: none;
+    pointer-events: auto !important;
+    cursor: text;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    background: #fff;
+}
+
+/* Chrome/Safari Autofill Fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    -webkit-text-fill-color: #111;
+    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Assistant Modal */
+.assistant-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    backdrop-filter: blur(5px);
+}
+
+.assistant-modal {
+    width: 90%;
+    max-width: 600px;
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.assistant-body {
+    padding: 25px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.assistant-card {
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px dashed #667eea;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 15px 0;
+    font-style: italic;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    outline: none;
+}
+
+.assistant-card[contenteditable="true"]:focus {
+    background: rgba(102, 126, 234, 0.2);
+    border-style: solid;
+}
+
+.assistant-footer {
+    padding: 20px;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #eee;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Social Footer */
+.social-footer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    padding: 8px 15px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.social-footer:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.social-links {
+    display: flex;
+    gap: 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    padding-left: 10px;
+}
+
+.social-links a {
+    color: white;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.social-links a:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+/* Dark theme adjustment for footer and icons */
+.dark-theme .social-footer {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .btn-icon,
+.dark-theme .btn-mobile-menu {
+    color: white;
+}
+
+/* --- ESTILO UNIFICADO: PC IGUAL AO CELULAR --- */
+
+/* 1. Garante que o botão de 3 tracinhos apareça no PC */
+.btn-mobile-menu {
+    display: block !important;
+    color: white !important;
+    /* Cor branca para aparecer bem no fundo roxo */
+}
+
+/* 2. Faz o site ocupar a tela inteira sem divisões fixas */
+#app {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    gap: 0 !important;
+}
+
+/* 3. Ajusta o rodapé social para não atrapalhar o texto no PC */
+.social-footer {
+    position: fixed;
+    bottom: 10px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* --- FUNDO PERSONALIZADO DA TELA DE LOGIN --- */
+
+/* Versão Desktop (PC) */
+.login-container {
+    background-image: url('/src/assets/funlogindesk.jpeg') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    min-height: 100vh !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+@media (max-width: 768px) {
+    .login-container {
+        background-image: url('/src/assets/funloginmob.jpeg') !important;
+    }
+}
