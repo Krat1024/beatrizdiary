@@ -1,273 +1,207 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { dbService } from '../services/db.js';
 
-console.log("Daily Diary Editor v1.4 - Mobile Alignment Fix");
-
-export function renderEditor({ entry, onSave, onDelete, onMenuToggle, onSettings }) {
+export function renderEditor({ entry, onSave, onDelete, onMenuToggle, onSettings, allEntries = [] }) {
     const container = document.createElement('div');
     container.className = 'editor-container';
 
-    // State for current edit
-    let state = entry ? {
-        ...entry,
-        images: entry.images || []
-    } : {
-        id: Date.now().toString(),
-        content: '',
-        images: [],
-        title: ''
+    let state = entry ? { ...entry, images: entry.images || [] } : {
+        id: Date.now().toString(), content: '', images: [], title: ''
     };
 
-    // Header
+    // --- Header ---
     const header = document.createElement('div');
     header.className = 'editor-header';
+    header.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button class="btn-mobile-menu" id="m-btn">☰</button>
+            <div class="date-display" style="color:white;">
+                ${new Date(parseInt(state.id)).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+        </div>
+        <div class="editor-actions">
+            ${entry ? `<button class="btn-danger" id="d-btn">Apagar</button>` : ''}
+            <button class="btn-primary" id="s-btn">Save</button>
+        </div>
+    `;
 
-    const leftGroup = document.createElement('div');
-    leftGroup.style.display = 'flex';
-    leftGroup.style.alignItems = 'center';
-    leftGroup.style.gap = '10px';
-
-    const menuBtn = document.createElement('button');
-    menuBtn.textContent = '☰';
-    menuBtn.className = 'btn-mobile-menu';
-    menuBtn.onclick = onMenuToggle;
-
-    const dateDisplay = document.createElement('div');
-    dateDisplay.className = 'date-display';
-    const date = entry ? new Date(parseInt(entry.id)) : new Date();
-    dateDisplay.textContent = date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-    leftGroup.append(menuBtn, dateDisplay);
-    header.appendChild(leftGroup);
-
-    const actions = document.createElement('div');
-    actions.className = 'editor-actions';
-
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Save';
-    saveBtn.className = 'btn-primary';
-    saveBtn.onclick = async () => {
-        await onSave(state);
-        const originalText = saveBtn.textContent;
-        saveBtn.textContent = 'Salvo! ✅';
-        setTimeout(() => saveBtn.textContent = originalText, 1500);
-    };
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Apagar';
-    deleteBtn.className = 'btn-danger';
-    deleteBtn.style.display = entry ? 'inline-block' : 'none';
-    deleteBtn.onclick = () => {
-        if (confirm('Tem certeza que deseja apagar esta nota?')) {
-            onDelete(state.id);
-        }
-    };
-
-    actions.append(deleteBtn, saveBtn);
-    header.append(actions);
-    container.appendChild(header);
-
-    // Toolbar
+    // --- Toolbar ---
     const toolbar = document.createElement('div');
     toolbar.className = 'editor-toolbar';
     toolbar.innerHTML = `
-        <button class="btn-tool" id="btn-img" title="Add Images">📷</button>
-        <button class="btn-tool" id="btn-assist" title="Writing Assistant">✨</button>
-        <button class="btn-tool" id="btn-edit-log" title="Add Update Mark">📝</button>
-        <button class="btn-tool" id="btn-font" title="Change Font">A</button>
-        <button class="btn-tool" id="btn-bg" title="Change Background">🖼️</button>
+        <button class="btn-tool" id="btn-img" title="Fotos">📷</button>
+        <button class="btn-tool" id="btn-assist" title="Assistente Gemini">✨</button>
+        <button class="btn-tool" id="btn-edit-log" title="Log">📝</button>
+        <button class="btn-tool" id="btn-font">A</button>
+        <button class="btn-tool" id="btn-bg">🖼️</button>
     `;
-    container.appendChild(toolbar);
 
-    // Image Input
-    const imgInput = document.createElement('input');
-    imgInput.type = 'file';
-    imgInput.accept = 'image/*';
-    imgInput.multiple = true;
-    imgInput.style.display = 'none';
-    imgInput.onchange = (e) => handleImageUpload(e.target.files);
-    container.appendChild(imgInput);
-
-    toolbar.querySelector('#btn-img').onclick = () => imgInput.click();
-
-    // Image Gallery
-    const gallery = document.createElement('div');
-    gallery.className = 'editor-gallery';
-    gallery.style.display = 'flex';
-    gallery.style.gap = '10px';
-    gallery.style.padding = '10px 20px';
-    gallery.style.flexWrap = 'wrap';
-    container.appendChild(gallery);
-
-    const renderGallery = () => {
-        gallery.innerHTML = '';
-        const images = Array.isArray(state.images) ? state.images : [];
-        images.forEach((imgSrc, index) => {
-            const imgContainer = document.createElement('div');
-            imgContainer.style.position = 'relative';
-            const img = document.createElement('img');
-            img.src = imgSrc;
-            img.style.width = '100px';
-            img.style.height = '100px';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '8px';
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = '×';
-            removeBtn.className = 'btn-danger';
-            removeBtn.style.position = 'absolute';
-            removeBtn.style.top = '-5px';
-            removeBtn.style.right = '-5px';
-            removeBtn.style.borderRadius = '50%';
-            removeBtn.style.width = '20px';
-            removeBtn.style.height = '20px';
-            removeBtn.style.padding = '0';
-            removeBtn.onclick = () => {
-                state.images.splice(index, 1);
-                renderGallery();
-            };
-            imgContainer.append(img, removeBtn);
-            gallery.appendChild(imgContainer);
-        });
-    };
-    renderGallery();
-
-    // Title Area
     const titleInput = document.createElement('input');
     titleInput.className = 'form-control';
     titleInput.placeholder = 'Título da Nota...';
     titleInput.value = state.title || '';
-    titleInput.style.margin = '0 20px 10px 20px';
-    titleInput.style.width = 'calc(100% - 40px)';
-    titleInput.style.fontSize = '1.5rem';
-    titleInput.style.fontWeight = 'bold';
-    titleInput.style.background = 'transparent';
-    titleInput.style.border = 'none';
-    titleInput.style.borderBottom = '1px solid rgba(0,0,0,0.1)';
-    titleInput.oninput = (e) => { state.title = e.target.value; };
-    container.appendChild(titleInput);
+    titleInput.style.cssText = "text-align:center; font-size:2rem; background:transparent; border:none; border-bottom:1px solid var(--glass-border); color:white; margin:20px auto; width:90%; display:block;";
 
-    // Content Area
     const content = document.createElement('div');
     content.className = 'editor-content';
     content.contentEditable = true;
     content.innerHTML = state.content || '';
 
-    if (!state.content) {
-        content.classList.add('empty');
-        content.dataset.placeholder = "Querida Beatriz... (Clique no ✨ para ideias!)";
-    }
+    container.append(header, toolbar, titleInput, content);
 
-    content.oninput = () => {
-        state.content = content.innerHTML;
-        content.classList.remove('empty'); // Force remove placeholder as soon as user types
-    };
-    content.onfocus = () => {
-        content.classList.remove('empty');
-    };
-    content.onblur = () => { if (!content.innerText.trim()) content.classList.add('empty'); };
+    // --- LÓGICA DO ASSISTENTE INTEGRADO ---
+    toolbar.querySelector('#btn-assist').onclick = () => {
+        const userKey = localStorage.getItem('user_gemini_key');
 
-    container.appendChild(content);
-
-    // AI Assistant Modal (Defined AFTER content for safety)
-    const showAssistantModal = async () => {
         const overlay = document.createElement('div');
-        overlay.className = 'assistant-overlay';
+        overlay.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center; z-index:4000; padding:20px; backdrop-filter:blur(8px);";
 
         const modal = document.createElement('div');
-        modal.className = 'assistant-modal glass-panel';
+        modal.className = 'glass-panel';
+        modal.style.cssText = "padding:30px; max-width:500px; width:100%; background:#1a202c; color:white; border-radius:24px; border: 1px solid rgba(255,255,255,0.1);";
 
-        const body = document.createElement('div');
-        body.className = 'assistant-body';
+        // PASSO 1: CONFIGURAR CHAVE
+        if (!userKey) {
+            modal.innerHTML = `
+                <h3 style="margin-bottom:15px; text-align:center;">🚀 Ativar Assistente IA</h3>
+                <p style="font-size:0.9rem; opacity:0.8; margin-bottom:20px; text-align:center;">Para começar, cole sua chave do Gemini abaixo.</p>
+                <input type="text" id="key-input" class="form-control" style="margin-bottom:20px; background:rgba(255,255,255,0.05); color:white; border: 1px solid rgba(255,255,255,0.2);" placeholder="AIzaSy...">
+                <div style="display:flex; justify-content:center; gap:10px;">
+                    <button id="ai-close" class="btn-danger">Agora não</button>
+                    <button id="save-key" class="btn-primary" style="background:#6366f1;">Salvar Chave</button>
+                </div>
+            `;
 
-        const title = document.createElement('h3');
-        title.textContent = '✨ Assistente de IA';
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
 
-        const desc = document.createElement('p');
-        desc.textContent = 'Transformando seu texto com IA Global...';
-        desc.style.fontSize = '0.9rem';
+            modal.querySelector('#save-key').onclick = () => {
+                const key = modal.querySelector('#key-input').value.trim();
+                if (key.length < 10) return alert("Por favor, insira uma chave válida.");
 
-        const resultArea = document.createElement('div');
-        resultArea.className = 'assistant-card';
-        resultArea.contentEditable = true;
-        resultArea.innerHTML = '<div style="text-align:center; padding: 20px;">🪄 Gerando mágica...</div>';
-
-        const getGeminiResponse = async (raw) => {
-            if (!raw || raw.trim().length < 2) return "Escreva um pouco mais primeiro! 😉";
-            try {
-                const response = await fetch('/api/ai', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: raw })
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro no servidor');
-                }
-                const data = await response.json();
-                return data.text;
-            } catch (err) {
-                console.error("AI Error:", err);
-                return `❌ Indisponível: ${err.message}`;
-            }
-        };
-
-        const currentDraft = content.innerText || "";
-
-        const footer = document.createElement('div');
-        footer.className = 'assistant-footer';
-
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Descartar';
-        closeBtn.className = 'btn-danger';
-        closeBtn.onclick = () => document.body.removeChild(overlay);
-
-        const applyBtn = document.createElement('button');
-        applyBtn.textContent = 'Usar esta versão ✅';
-        applyBtn.className = 'btn-primary';
-        applyBtn.onclick = () => {
-            content.innerHTML = resultArea.innerHTML;
-            state.content = resultArea.innerHTML;
-            document.body.removeChild(overlay);
-        };
-
-        body.append(title, desc, resultArea);
-        footer.append(closeBtn, applyBtn);
-        modal.append(body, footer);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
-        const aiResponse = await getGeminiResponse(currentDraft);
-        resultArea.innerHTML = aiResponse;
-    };
-
-    toolbar.querySelector('#btn-assist').onclick = showAssistantModal;
-
-    toolbar.querySelector('#btn-edit-log').onclick = () => {
-        const now = new Date();
-        const mark = `<div contenteditable="false" style="border-left: 4px solid #667eea; background: rgba(102, 126, 234, 0.1); padding: 5px 10px; margin: 10px 0; border-radius: 0 4px 4px 0; font-size: 0.8rem; user-select: none;"><strong>📝 ATUALIZAÇÃO [${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}]</strong></div><br>`;
-        content.focus();
-        document.execCommand('insertHTML', false, mark);
-        state.content = content.innerHTML;
-    };
-
-    toolbar.querySelector('#btn-font').onclick = onSettings;
-    toolbar.querySelector('#btn-bg').onclick = onSettings;
-
-    // Helpers
-    const handleImageUpload = (files) => {
-        if (state.images.length + files.length > 10) {
-            alert('Máximo de 10 imagens.');
-            return;
-        }
-        Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                state.images.push(e.target.result);
-                renderGallery();
+                localStorage.setItem('user_gemini_key', key);
+                document.body.removeChild(overlay);
+                alert("Configurado! Clique novamente no ✨");
             };
-            reader.readAsDataURL(file);
-        });
+        }
+        // PASSO 2: MENU DE USO
+        else {
+            modal.innerHTML = `
+                <h3 style="margin-bottom:20px; text-align:center;">✨ Assistente Gemini</h3>
+                <div style="display:grid; gap:15px;">
+                    <button id="go-desabafo" style="padding:20px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; cursor:pointer; text-align:left;">
+                        <strong>✍️ Desabafo Inteligente</strong><br>
+                        <small style="opacity:0.6;">Organizar pensamentos em uma nota poética.</small>
+                    </button>
+                    <button id="go-relatorio" style="padding:20px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; cursor:pointer; text-align:left;">
+                        <strong>📊 Relatório da Semana</strong><br>
+                        <small style="opacity:0.6;">Analisar sentimentos dos últimos 7 dias.</small>
+                    </button>
+                    <button id="reset-key" style="background:none; border:none; color:rgba(255,255,255,0.3); font-size:0.7rem; cursor:pointer; margin-top:10px; text-decoration:underline;">Trocar chave de API</button>
+                </div>
+                <button id="ai-close" class="btn-danger" style="margin-top:20px; width:100%;">Fechar</button>
+            `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            // --- LÓGICA DESABAFO ---
+            modal.querySelector('#go-desabafo').onclick = () => {
+                modal.innerHTML = `
+                    <h3>✨ Desabafo Inteligente</h3>
+                    <textarea id="ai-input" class="form-control" style="height:150px; margin:15px 0; background:rgba(0,0,0,0.2); color:white;" placeholder="Como foi seu dia?"></textarea>
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button id="ai-back" class="btn-danger">Voltar</button>
+                        <button id="ai-gen" class="btn-primary">Gerar Nota</button>
+                    </div>
+                `;
+
+                modal.querySelector('#ai-gen').onclick = async () => {
+                    const textInput = modal.querySelector('#ai-input').value.trim();
+                    if (!textInput) return;
+
+                    const genBtn = modal.querySelector('#ai-gen');
+                    genBtn.innerText = "🪄 Processando...";
+                    genBtn.disabled = true;
+
+                    try {
+                        const genAI = new GoogleGenerativeAI(userKey);
+                        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+                        const result = await model.generateContent(`Transforme este relato em uma entrada de diário poética e organizada em português: "${textInput}"`);
+                        const response = await result.response;
+                        const text = response.text();
+
+                        content.innerHTML = text.replace(/\n/g, '<br>');
+                        state.content = content.innerHTML;
+
+                        // Título Automático
+                        const tResult = await model.generateContent(`Crie um título curto de 3 palavras para esta nota: ${text}`);
+                        titleInput.value = tResult.response.text().replace(/"/g, '').trim();
+
+                        document.body.removeChild(overlay);
+                    } catch (err) {
+                        alert("Erro na chave ou conexão. Verifique se a chave está correta.");
+                        genBtn.innerText = "Gerar Nota";
+                        genBtn.disabled = false;
+                    }
+                };
+                modal.querySelector('#ai-back').onclick = () => document.body.removeChild(overlay);
+            };
+
+            // --- LÓGICA RELATÓRIO ---
+            modal.querySelector('#go-relatorio').onclick = async () => {
+                modal.innerHTML = `<div style="padding:40px; text-align:center;">🪄 Analisando sua semana...</div>`;
+                try {
+                    const umaSemanaAtras = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                    const notasSemana = allEntries.filter(e => parseInt(e.id) > umaSemanaAtras);
+
+                    if (notasSemana.length === 0) {
+                        alert("Você não tem notas suficientes para um relatório.");
+                        document.body.removeChild(overlay);
+                        return;
+                    }
+
+                    const genAI = new GoogleGenerativeAI(userKey);
+                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                    const prompt = `Analise o humor destas notas e faça um resumo carinhoso da semana: ${notasSemana.map(n => n.content).join(" | ")}`;
+
+                    const result = await model.generateContent(prompt);
+                    const report = result.response.text();
+
+                    modal.innerHTML = `
+                        <h3>📊 Relatório Semanal</h3>
+                        <div style="max-height:300px; overflow-y:auto; margin:15px 0; font-size:0.9rem;">${report.replace(/\n/g, '<br>')}</div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button id="rep-close" class="btn-danger">Fechar</button>
+                            <button id="save-rep" class="btn-primary">Salvar Nota</button>
+                        </div>
+                    `;
+                    modal.querySelector('#save-rep').onclick = () => {
+                        onSave({ id: Date.now().toString(), title: "📊 Relatório Semanal", content: report.replace(/\n/g, '<br>'), images: [] });
+                        document.body.removeChild(overlay);
+                    };
+                    modal.querySelector('#rep-close').onclick = () => document.body.removeChild(overlay);
+                } catch (e) { alert("Erro ao gerar relatório."); document.body.removeChild(overlay); }
+            };
+
+            modal.querySelector('#reset-key').onclick = () => {
+                if (confirm("Deseja remover sua chave?")) {
+                    localStorage.removeItem('user_gemini_key');
+                    document.body.removeChild(overlay);
+                }
+            };
+        }
+        modal.querySelector('#ai-close').onclick = () => document.body.removeChild(overlay);
     };
+
+    // --- Eventos de Botões ---
+    header.querySelector('#s-btn').onclick = () => {
+        state.title = titleInput.value;
+        state.content = content.innerHTML;
+        onSave(state);
+    };
+    header.querySelector('#m-btn').onclick = onMenuToggle;
+    if (entry) header.querySelector('#d-btn').onclick = () => onDelete(state.id);
 
     return container;
 }

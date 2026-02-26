@@ -16,8 +16,6 @@ export const authService = {
 
         if (error) throw new Error(error.message);
 
-        // Supabase handle 2FA via multi-factor auth, but for simple MVP 
-        // we check a custom 'two_factor_enabled' flag in the public profile if needed
         const { data: profile } = await supabase
             .from('profiles')
             .select('two_factor_enabled')
@@ -31,8 +29,6 @@ export const authService = {
     },
 
     async verify2FA(code) {
-        // En produção, usaríamos supabase.auth.mfa.verify()
-        // Por agora, manteremos o mock simplificado ou usaremos o código fixo
         if (code === '123456') return true;
         throw new Error("Código 2FA inválido.");
     },
@@ -48,10 +44,22 @@ export const authService = {
     },
 
     async sendRecoveryEmail(email) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        // Adicionei o redirectTo para garantir que ele volte para a URL correta no celular
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin
+        });
         if (error) throw new Error(error.message);
-        alert("E-mail de recuperação enviado!");
         return true;
+    },
+
+    // ESTA É A FUNÇÃO QUE FALTAVA E RESOLVE O "LINK EXPIRADO"
+    async updatePassword(newPassword) {
+        const { data, error } = await supabase.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) throw new Error(error.message);
+        return data;
     },
 
     async register(name, email, password) {
@@ -66,7 +74,6 @@ export const authService = {
         if (error) throw new Error(error.message);
         if (!data.user) throw new Error("Erro ao criar usuário.");
 
-        // Create profile in the 'profiles' table
         const { error: profileError } = await supabase
             .from('profiles')
             .insert([

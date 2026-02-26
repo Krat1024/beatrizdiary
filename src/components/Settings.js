@@ -85,6 +85,11 @@ export function renderSettings({ onClose }) {
             </div>
             <input type="checkbox" id="tfa-toggle" style="width: 20px; height: 20px; cursor: pointer;">
         </div>
+        <div id="qrcode-container" style="display: none; text-align: center; background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; color: #333;">
+        <p style="font-size: 0.8rem; margin-bottom: 10px; font-weight: bold;">Escaneie com o Google Authenticator:</p>
+        <img id="qrcode-img" src="" style="width: 150px; height: 150px; display: block; margin: 0 auto; border: 1px solid #ddd;">
+        <p style="font-size: 0.7rem; margin-top: 8px; opacity: 0.8;">Chave manual: <code id="secret-text" style="background: #eee; padding: 2px 5px; border-radius: 4px;"></code></p>
+    </div>
         
         <button id="btn-logout-all" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ff4b2b; background: rgba(255,75,43,0.1); color: #ff4b2b; cursor: pointer; font-weight: bold; transition: 0.3s;">
              Sair de todos os dispositivos
@@ -167,19 +172,39 @@ export function renderSettings({ onClose }) {
 
     tfaToggle.onchange = async (e) => {
         const enabled = e.target.checked;
-        if (enabled) {
-            // No futuro, aqui abriríamos o QR Code para o Google Authenticator
-            alert("Para configurar o 2FA via App, use o código: 123456 (Mock). Em breve integração real.");
-        }
+        const qrContainer = container.querySelector('#qrcode-container');
+        const qrImg = container.querySelector('#qrcode-img');
+        const secretText = container.querySelector('#secret-text');
 
-        const user = await dbService.getUserProfile();
-        if (user) {
-            user.twoFactorEnabled = enabled;
-            await dbService.saveUserProfile(user);
-            alert(enabled ? "2FA Ativado!" : "2FA Desativado.");
+        if (enabled) {
+            try {
+                const user = await dbService.getUserProfile();
+                const { setup2FA } = await import('../../api/2fa.js');
+                const resultado = await setup2FA(user.email || 'usuario@daily.diary');
+
+                if (qrImg) qrImg.src = resultado.qrCodeUrl;
+                if (secretText) secretText.innerText = resultado.secret;
+                if (qrContainer) qrContainer.style.display = 'block';
+
+                user.twoFactorSecret = resultado.secret;
+                user.twoFactorEnabled = true;
+                await dbService.saveUserProfile(user);
+
+            } catch (err) {
+                console.error("Erro ao ativar 2FA:", err);
+                alert("Erro ao carregar o QR Code.");
+                e.target.checked = false;
+            }
+        } else {
+            if (qrContainer) qrContainer.style.display = 'none';
+            const user = await dbService.getUserProfile();
+            if (user) {
+                user.twoFactorEnabled = false;
+                user.twoFactorSecret = null;
+                await dbService.saveUserProfile(user);
+            }
         }
     };
-
     // Logout All Handler
     container.querySelector('#btn-logout-all').onclick = async () => {
         if (confirm("Tem certeza que deseja sair de todos os outros dispositivos?")) {
